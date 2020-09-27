@@ -35,12 +35,12 @@ func Run(work *model.WorkRequest) error {
 		return work.Terminate(err)
 	}
 
-	// Exec script with args...
-	cmd := exec.Command(binary, work.Payload)
-	// with env variables...
-	cmd.Env = append(os.Environ(), work.Args...)
-	// using a process group...
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	argFile, err := os.Create(work.ArgFilename)
+	if err != nil {
+		return work.Terminate(err)
+	}
+	defer argFile.Close()
+	argFile.WriteString(work.Payload)
 
 	// Open the log file for writing
 	logFile, err := os.Create(work.LogFilename)
@@ -52,6 +52,13 @@ func Run(work *model.WorkRequest) error {
 
 	wLogFile := bufio.NewWriter(logFile)
 	defer wLogFile.Flush()
+
+	// Exec script with args...
+	cmd := exec.Command(binary, argFile.Name(), logFile.Name())
+	// with env variables...
+	cmd.Env = append(os.Environ(), work.Args...)
+	// using a process group...
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	// Combine cmd stdout and stderr
 	outReader, err := cmd.StdoutPipe()

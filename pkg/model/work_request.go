@@ -41,6 +41,7 @@ type WorkRequest struct {
 	MessageChan chan []byte
 	Timeout     int
 	Status      WorkStatus
+	ArgFilename string
 	LogFilename string
 	Err         error
 	mutex       sync.Mutex
@@ -58,6 +59,7 @@ func NewWorkRequest(name, script, payload, output string, args []string, timeout
 		MessageChan: make(chan []byte),
 		Status:      Idle,
 	}
+	w.ArgFilename = path.Join(output, fmt.Sprintf("%s_%d_%s.arg", strcase.ToSnake(w.Name), w.ID, time.Now().Format("20060102_1504")))
 	w.LogFilename = path.Join(output, fmt.Sprintf("%s_%d_%s.txt", strcase.ToSnake(w.Name), w.ID, time.Now().Format("20060102_1504")))
 	return w
 }
